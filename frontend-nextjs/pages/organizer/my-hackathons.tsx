@@ -113,33 +113,58 @@ export default function MyHackathons() {
   return (
     <ProtectedRoute>
       <Navbar />
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-purple-900/20 dark:to-blue-900/20 py-8 px-4">
         <div className="max-w-7xl mx-auto">
-          <div className="card p-6 mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                My Hackathons
-              </h1>
+          {/* Header */}
+          <div className="card p-8 mb-8 animate-slide-up">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
+                  Organizer Dashboard 📋
+                </h1>
+                <p className="text-gray-600 dark:text-gray-400">Manage your hackathons and view team registrations</p>
+              </div>
               <button
                 onClick={() => router.push("/create")}
-                className="btn-primary"
+                className="btn-primary flex items-center gap-2"
               >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                </svg>
                 Create New Hackathon
               </button>
             </div>
+          </div>
+
+          {/* My Hackathons */}
+          <div className="card p-6 mb-8 animate-slide-up">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-3 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg">
+                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
+                My Hackathons ({hackathons.length})
+              </h2>
+            </div>
 
             {hackathons.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-gray-500 dark:text-gray-400">
+              <div className="text-center py-16">
+                <div className="text-6xl mb-4">📋</div>
+                <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">
                   You haven't created any hackathons yet.
+                </p>
+                <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
+                  Click "Create New Hackathon" to get started!
                 </p>
               </div>
             ) : (
-              <div className="grid gap-4">
+              <div className="grid gap-6">
                 {hackathons.map((hackathon) => (
                   <div
                     key={hackathon._id}
-                    className="border-2 border-gray-200 dark:border-gray-700 p-4 rounded-lg hover:shadow-lg transition-all"
+                    className="border-2 border-gray-200 dark:border-gray-700 p-6 rounded-xl hover:shadow-2xl hover:border-purple-400 dark:hover:border-purple-600 transition-all duration-300 bg-gradient-to-r from-white to-gray-50 dark:from-gray-800 dark:to-gray-800/50"
                   >
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
@@ -184,10 +209,17 @@ export default function MyHackathons() {
           </div>
 
           {selectedHackathon && (
-            <div className="card p-6">
-              <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">
-                Registrations ({registrations.length} teams)
-              </h2>
+            <div className="card p-6 animate-slide-up">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-gradient-to-r from-green-500 to-teal-500 rounded-lg">
+                  <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+                  </svg>
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  Team Registrations ({registrations.length})
+                </h2>
+              </div>
 
               {loading ? (
                 <div className="text-center py-8">
