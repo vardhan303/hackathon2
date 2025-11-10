@@ -10,6 +10,8 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loginSuccess, setLoginSuccess] = useState(false);
+  const [userRole, setUserRole] = useState("");
   const { login } = useContext(AuthContext);
   const router = useRouter();
 
@@ -26,14 +28,20 @@ export default function Login() {
         _id: res.data._id
       });
       
-      // Role-based redirect
-      if (res.data.role === 'admin') {
-        router.push("/admin");
-      } else if (res.data.role === 'judge') {
-        router.push("/judge");
-      } else {
-        router.push("/dashboard");
-      }
+      // Show success message with role
+      setUserRole(res.data.role);
+      setLoginSuccess(true);
+      
+      // Redirect based on role after 2 seconds
+      setTimeout(() => {
+        if (res.data.role === 'admin') {
+          router.push("/admin");
+        } else if (res.data.role === 'judge') {
+          router.push("/judge");
+        } else {
+          router.push("/dashboard");
+        }
+      }, 2000);
     } catch (err: any) {
       setError(err.response?.data?.message || "Login failed");
     } finally {
@@ -63,6 +71,48 @@ export default function Login() {
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                   </svg>
                   {error}
+                </div>
+              </div>
+            )}
+
+            {loginSuccess && (
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-2 border-green-200 dark:border-green-800 px-6 py-4 rounded-lg mb-6 animate-fade-in">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <svg className="w-6 h-6 mr-3 text-green-600 dark:text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <div>
+                      <p className="text-green-800 dark:text-green-200 font-bold">Login Successful!</p>
+                      <p className="text-sm text-green-700 dark:text-green-300 mt-1">Redirecting...</p>
+                    </div>
+                  </div>
+                  <div className="ml-4">
+                    {userRole === 'admin' && (
+                      <span className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg font-semibold text-sm">
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clipRule="evenodd" />
+                        </svg>
+                        ADMIN
+                      </span>
+                    )}
+                    {userRole === 'judge' && (
+                      <span className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold text-sm">
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                        JUDGE
+                      </span>
+                    )}
+                    {userRole === 'user' && (
+                      <span className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold text-sm">
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                        </svg>
+                        USER/ORGANIZER
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
