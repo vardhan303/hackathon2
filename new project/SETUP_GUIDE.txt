@@ -1,0 +1,127 @@
+# Hackathon Management Platform - Setup Guide
+
+## System Admin Features Added ✅
+
+### Backend Enhancements
+- **User Management API**: View all users, get user details, update user approval status
+- **Hackathon Management API**: View all hackathons with details, update status, delete hackathons
+- **Admin-only routes** protected with `adminAuth` middleware
+
+### Frontend Enhancements
+- **New Admin Management Page** (`/admin/management`)
+  - Users Management Tab: View all users, approve/revoke user permissions
+  - Hackathons Management Tab: View all hackathons, change status, delete hackathons
+- **Enhanced Navigation** with direct link to management page for admins
+
+## Setup Instructions
+
+### 1. Configure MongoDB
+Edit `backend/.env`:
+```env
+PORT=5000
+MONGO_URI=mongodb+srv://your-username:your-password@cluster0.mongodb.net/hackathonDB
+JWT_SECRET=your_secret_key_here
+```
+
+### 2. Create System Admin (After MongoDB is configured)
+```bash
+cd backend
+npm run seed:admin
+```
+
+**Default Admin Credentials:**
+- Email: `admin@hackathon.com`
+- Password: `admin123`
+
+### 3. Start the Backend
+```bash
+cd backend
+npm start
+```
+
+### 4. Start the Frontend (Already Running)
+```bash
+cd frontend
+npm run dev
+```
+
+## Admin Capabilities
+
+### As System Admin, you can:
+
+1. **Approve/Reject Hackathon Requests**
+   - View pending requests from organizers
+   - Approve or reject creation permissions
+
+2. **Approve/Reject Judge Requests**
+   - View judge applications for hackathons
+   - Approve or reject judge access
+
+3. **Manage All Users**
+   - View complete user list with details
+   - See user roles (User, Judge, Admin)
+   - Approve/Revoke user permissions
+   - View registration dates
+
+4. **Manage All Hackathons**
+   - View all hackathon details
+   - Change hackathon status (Draft, Open, Active, Closed)
+   - Delete hackathons
+   - View organizer information
+   - Access full hackathon configuration
+
+## User Flow
+
+### For Users/Organizers:
+1. Register as "User/Organizer"
+2. Request hackathon creation permission
+3. Wait for admin approval
+4. Create hackathons with full details
+
+### For Judges:
+1. Register as "Judge"
+2. Browse available hackathons
+3. Request to judge specific hackathons
+4. Wait for admin approval
+
+### For Admin:
+1. Login with admin credentials
+2. Access Admin Panel for request approvals
+3. Access User & Hackathon Management for full control
+4. Monitor all platform activity
+
+## API Endpoints
+
+### New Admin Endpoints:
+- `GET /api/auth/users` - Get all users (Admin only)
+- `GET /api/auth/users/:id` - Get user by ID (Admin only)
+- `PUT /api/auth/users/:id/status` - Update user approval status (Admin only)
+- `GET /api/hackathons/admin/all` - Get all hackathons with details (Admin only)
+- `PUT /api/hackathons/:id/status` - Update hackathon status (Admin only)
+- `DELETE /api/hackathons/:id` - Delete hackathon (Admin only)
+
+## Frontend Routes
+
+- `/` - Login
+- `/register` - Registration
+- `/dashboard` - User Dashboard
+- `/admin` - Admin Panel (Request Approvals)
+- `/admin/management` - User & Hackathon Management (NEW)
+- `/create` - Create Hackathon (Approved users only)
+- `/judge` - Judge Requests
+
+## Next Steps
+
+1. Update your MongoDB connection string in `backend/.env`
+2. Run the admin seed script: `npm run seed:admin`
+3. Restart the backend server
+4. Login with admin credentials
+5. Start managing your hackathon platform!
+
+## Security Notes
+
+- Change the default admin password after first login
+- Keep your JWT_SECRET secure
+- Never commit `.env` file to version control
+- Use strong passwords for all users
+- MongoDB connection string should use SSL/TLS
