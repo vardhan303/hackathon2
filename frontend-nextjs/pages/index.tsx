@@ -25,7 +25,15 @@ export default function Login() {
         email: res.data.email,
         _id: res.data._id
       });
-      router.push("/dashboard");
+      
+      // Role-based redirect
+      if (res.data.role === 'admin') {
+        router.push("/admin");
+      } else if (res.data.role === 'judge') {
+        router.push("/judge");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || "Login failed");
     } finally {
