@@ -21,13 +21,14 @@ interface Registration {
     name: string;
     email: string;
     phone: string;
+    registrationNumber: string;
   };
   registrationNumber: string;
   teamSize: number;
   teammates: Array<{
     name: string;
+    registrationNumber: string;
     email: string;
-    phone: string;
   }>;
   status: string;
   registeredAt: string;
@@ -86,6 +87,18 @@ export default function MyHackathons() {
     }
   };
 
+  const toggleHackathonStatus = async (hackathonId: string, currentStatus: string) => {
+    try {
+      const newStatus = currentStatus === 'open' ? 'closed' : 'open';
+      await api.put(`/hackathons/${hackathonId}/status`, { status: newStatus });
+      alert(`Hackathon ${newStatus}!`);
+      fetchMyHackathons();
+    } catch (err) {
+      console.error("Error toggling status:", err);
+      alert("Failed to update hackathon status");
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'approved':
@@ -129,14 +142,14 @@ export default function MyHackathons() {
                     className="border-2 border-gray-200 dark:border-gray-700 p-4 rounded-lg hover:shadow-lg transition-all"
                   >
                     <div className="flex justify-between items-start">
-                      <div>
+                      <div className="flex-1">
                         <h3 className="text-xl font-bold text-blue-600 dark:text-blue-400">
                           {hackathon.name}
                         </h3>
                         <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                           {hackathon.description}
                         </p>
-                        <div className="flex gap-4 mt-2 text-sm">
+                        <div className="flex gap-4 mt-2 text-sm items-center">
                           <span className={`px-2 py-1 rounded ${getStatusColor(hackathon.status)}`}>
                             {hackathon.status.toUpperCase()}
                           </span>
@@ -145,12 +158,24 @@ export default function MyHackathons() {
                           </span>
                         </div>
                       </div>
-                      <button
-                        onClick={() => fetchRegistrations(hackathon._id)}
-                        className="btn-primary"
-                      >
-                        View Registrations
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => toggleHackathonStatus(hackathon._id, hackathon.status)}
+                          className={`px-4 py-2 rounded-lg font-semibold text-white ${
+                            hackathon.status === 'open' 
+                              ? 'bg-red-600 hover:bg-red-700' 
+                              : 'bg-green-600 hover:bg-green-700'
+                          }`}
+                        >
+                          {hackathon.status === 'open' ? 'Close Registration' : 'Open Registration'}
+                        </button>
+                        <button
+                          onClick={() => fetchRegistrations(hackathon._id)}
+                          className="btn-primary"
+                        >
+                          View Registrations
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -205,7 +230,7 @@ export default function MyHackathons() {
                               <p className="text-sm font-semibold mb-2">Teammates:</p>
                               {reg.teammates.map((teammate, idx) => (
                                 <div key={idx} className="text-xs text-gray-600 dark:text-gray-400 ml-4">
-                                 {idx + 1}. {teammate.name} - {teammate.email}
+                                  {idx + 1}. {teammate.name} | Reg#: {teammate.registrationNumber} | {teammate.email}
                                 </div>
                               ))}
                             </div>

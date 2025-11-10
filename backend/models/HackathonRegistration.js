@@ -25,8 +25,13 @@ const hackathonRegistrationSchema = new mongoose.Schema({
       type: String,
       required: true
     },
+    registrationNumber: {
+      type: String,
+      required: true
+    },
     email: {
-      type: String
+      type: String,
+      required: true
     }
   }],
   status: {

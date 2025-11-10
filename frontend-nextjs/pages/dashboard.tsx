@@ -38,7 +38,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [registeringFor, setRegisteringFor] = useState<string | null>(null);
   const [teamSize, setTeamSize] = useState(1);
-  const [teammates, setTeammates] = useState([{ name: "", email: "" }]);
+  const [teammates, setTeammates] = useState([{ name: "", registrationNumber: "", email: "" }]);
   const router = useRouter();
 
   useEffect(() => {
@@ -103,7 +103,7 @@ export default function Dashboard() {
       alert(`Registration successful! Your registration number is: ${response.data.registrationNumber}`);
       setRegisteringFor(null);
       setTeamSize(1);
-      setTeammates([{ name: "", email: "" }]);
+      setTeammates([{ name: "", registrationNumber: "", email: "" }]);
       fetchMyRegistrations();
     } catch (err: any) {
       alert(err.response?.data?.message || "Registration failed");
@@ -391,68 +391,97 @@ export default function Dashboard() {
                           
                           if (registeringFor === hackathon._id) {
                             return (
-                              <div className="space-y-3 animate-fade-in">
-                                <div>
-                                  <label className="block text-sm font-semibold mb-2">Team Size</label>
-                                  <input
-                                    type="number"
-                                    min="1"
-                                    max={hackathon.maxTeamSize}
-                                    value={teamSize}
-                                    onChange={(e) => {
-                                      const size = parseInt(e.target.value) || 1;
-                                      setTeamSize(size);
-                                      const newTeammates = Array.from({ length: Math.max(0, size - 1) }, (_, i) => 
-                                        teammates[i] || { name: "", email: "", phone: "" }
-                                      );
-                                      setTeammates(newTeammates);
-                                    }}
-                                    className="input w-full"
-                                  />
-                                </div>
-                                
-                                {teamSize > 1 && (
-                                  <div className="space-y-2">
-                                    <p className="text-sm font-semibold">Teammate Details ({teamSize - 1} teammate{teamSize > 2 ? 's' : ''})</p>
-                                    {teammates.slice(0, teamSize - 1).map((teammate, index) => (
-                                      <div key={index} className="p-3 bg-gray-50 dark:bg-gray-800 rounded space-y-2">
-                                        <p className="text-xs font-semibold">Teammate {index + 1}</p>
-                                        <input
-                                          type="text"
-                                          placeholder="Name"
-                                          value={teammate.name}
-                                          onChange={(e) => handleTeammateChange(index, 'name', e.target.value)}
-                                          className="input w-full text-sm"
-                                        />
-                                        <input
-                                          type="email"
-                                          placeholder="Email"
-                                          value={teammate.email}
-                                          onChange={(e) => handleTeammateChange(index, 'email', e.target.value)}
-                                          className="input w-full text-sm"
-                                        />
+                              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                                  <div className="p-6 space-y-4">
+                                    <div className="flex items-center justify-between mb-4">
+                                      <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Register for {hackathon.name}</h3>
+                                      <button
+                                        onClick={() => {
+                                          setRegisteringFor(null);
+                                          setTeamSize(1);
+                                          setTeammates([{ name: "", registrationNumber: "", email: "" }]);
+                                        }}
+                                        className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                                      >
+                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                      </button>
+                                    </div>
+
+                                    <div>
+                                      <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">Team Size (including you)</label>
+                                      <input
+                                        type="number"
+                                        min="1"
+                                        max={hackathon.maxTeamSize}
+                                        value={teamSize}
+                                        onChange={(e) => {
+                                          const size = parseInt(e.target.value) || 1;
+                                          setTeamSize(size);
+                                          const newTeammates = Array.from({ length: Math.max(0, size - 1) }, (_, i) => 
+                                            teammates[i] || { name: "", registrationNumber: "", email: "" }
+                                          );
+                                          setTeammates(newTeammates);
+                                        }}
+                                        className="input w-full"
+                                      />
+                                    </div>
+                                    
+                                    {teamSize > 1 && (
+                                      <div className="space-y-3">
+                                        <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Teammate Details ({teamSize - 1} teammate{teamSize > 2 ? 's' : ''})</p>
+                                        {teammates.slice(0, teamSize - 1).map((teammate, index) => (
+                                          <div key={index} className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg border-2 border-blue-200 dark:border-blue-800 space-y-3">
+                                            <p className="text-sm font-bold text-blue-800 dark:text-blue-300">Teammate {index + 1}</p>
+                                            <div className="grid grid-cols-1 gap-3">
+                                              <input
+                                                type="text"
+                                                placeholder="Full Name"
+                                                value={teammate.name}
+                                                onChange={(e) => handleTeammateChange(index, 'name', e.target.value)}
+                                                className="input w-full"
+                                              />
+                                              <input
+                                                type="text"
+                                                placeholder="Registration Number (e.g., USR123456789)"
+                                                value={teammate.registrationNumber}
+                                                onChange={(e) => handleTeammateChange(index, 'registrationNumber', e.target.value)}
+                                                className="input w-full"
+                                              />
+                                              <input
+                                                type="email"
+                                                placeholder="Email Address"
+                                                value={teammate.email}
+                                                onChange={(e) => handleTeammateChange(index, 'email', e.target.value)}
+                                                className="input w-full"
+                                              />
+                                            </div>
+                                          </div>
+                                        ))}
                                       </div>
-                                    ))}
+                                    )}
+                                    
+                                    <div className="flex gap-3 pt-4">
+                                      <button
+                                        onClick={() => handleRegister(hackathon._id)}
+                                        className="btn-primary flex-1"
+                                      >
+                                        Confirm Registration
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          setRegisteringFor(null);
+                                          setTeamSize(1);
+                                          setTeammates([{ name: "", registrationNumber: "", email: "" }]);
+                                        }}
+                                        className="px-6 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 font-semibold"
+                                      >
+                                        Cancel
+                                      </button>
+                                    </div>
                                   </div>
-                                )}
-                                
-                                <div className="flex gap-2">
-                                  <button
-                                    onClick={() => handleRegister(hackathon._id)}
-                                    className="btn-primary flex-1"
-                                  >
-                                    Confirm Registration
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      setRegisteringFor(null);
-                                      setTeamSize(1);
-                                      setTeammates([{ name: "", email: "" }]);
-                                    }}
-                                    className="px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
-                                  >
-                                    Cancel
-                                  </button>
                                 </div>
                               </div>
                             );
