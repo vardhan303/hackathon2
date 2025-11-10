@@ -20,17 +20,30 @@ interface Hackathon {
   status?: string;
 }
 
+interface Registration {
+  _id: string;
+  hackathonId: string;
+  registrationNumber: string;
+  status: 'pending' | 'approved' | 'rejected';
+  teamSize: number;
+}
+
 export default function Dashboard() {
   const { user } = useContext(AuthContext);
   const [hackathons, setHackathons] = useState<Hackathon[]>([]);
+  const [myRegistrations, setMyRegistrations] = useState<Registration[]>([]);
   const [requestStatus, setRequestStatus] = useState<string | null>(null);
   const [userApproved, setUserApproved] = useState(false);
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
+  const [registeringFor, setRegisteringFor] = useState<string | null>(null);
+  const [teamSize, setTeamSize] = useState(1);
+  const [teammates, setTeammates] = useState([{ name: "", email: "", phone: "" }]);
   const router = useRouter();
 
   useEffect(() => {
     fetchHackathons();
+    fetchMyRegistrations();
     checkUserStatus();
   }, []);
 
@@ -40,6 +53,15 @@ export default function Dashboard() {
       setHackathons(res.data);
     } catch (err) {
       console.error("Error fetching hackathons:", err);
+    }
+  };
+
+  const fetchMyRegistrations = async () => {
+    try {
+      const res = await api.get("/hackathons/my-registrations");
+      setMyRegistrations(res.data);
+    } catch (err) {
+      console.error("Error fetching registrations:", err);
     }
   };
 
@@ -69,6 +91,33 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRegister = async (hackathonId: string) => {
+    try {
+      const response = await api.post("/hackathons/register", {
+        hackathonId,
+        teamSize,
+        teammates: teammates.slice(0, teamSize - 1)
+      });
+      alert(`Registration successful! Your registration number is: ${response.data.registrationNumber}`);
+      setRegisteringFor(null);
+      setTeamSize(1);
+      setTeammates([{ name: "", email: "", phone: "" }]);
+      fetchMyRegistrations();
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Registration failed");
+    }
+  };
+
+  const getRegistrationStatus = (hackathonId: string) => {
+    return myRegistrations.find(r => r.hackathonId === hackathonId);
+  };
+
+  const handleTeammateChange = (index: number, field: string, value: string) => {
+    const newTeammates = [...teammates];
+    newTeammates[index] = { ...newTeammates[index], [field]: value };
+    setTeammates(newTeammates);
   };
 
   return (
@@ -287,6 +336,129 @@ export default function Dashboard() {
                             <span><strong>Team:</strong> {hackathon.maxTeamSize} members</span>
                           </div>
                         </div>
+                      </div>
+                      
+                      {/* Registration Section */}
+                      <div className="mt-4 pt-4 border-t dark:border-gray-700">
+                        {(() => {
+                          const registration = getRegistrationStatus(hackathon._id);
+                          
+                          if (registration) {
+                            return (
+                              <div className={`px-4 py-3 rounded-lg ${
+                                registration.status === 'approved' ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800' :
+                                registration.status === 'rejected' ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800' :
+                                'bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800'
+                              }`}>
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <p className="text-sm font-semibold">
+                                      Registration #{registration.registrationNumber}
+                                    </p>
+                                    <p className="text-xs mt-1">
+                                      Status: <span className="font-bold capitalize">{registration.status}</span>
+                                    </p>
+                                  </div>
+                                  <div className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                    registration.status === 'approved' ? 'bg-green-200 text-green-800 dark:bg-green-800 dark:text-green-200' :
+                                    registration.status === 'rejected' ? 'bg-red-200 text-red-800 dark:bg-red-800 dark:text-red-200' :
+                                    'bg-yellow-200 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-200'
+                                  }`}>
+                                    {registration.status === 'approved' ? '✓ Approved' :
+                                     registration.status === 'rejected' ? '✗ Rejected' :
+                                     '⏳ Pending'}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          }
+                          
+                          if (registeringFor === hackathon._id) {
+                            return (
+                              <div className="space-y-3 animate-fade-in">
+                                <div>
+                                  <label className="block text-sm font-semibold mb-2">Team Size</label>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    max={hackathon.maxTeamSize}
+                                    value={teamSize}
+                                    onChange={(e) => {
+                                      const size = parseInt(e.target.value) || 1;
+                                      setTeamSize(size);
+                                      const newTeammates = Array.from({ length: Math.max(0, size - 1) }, (_, i) => 
+                                        teammates[i] || { name: "", email: "", phone: "" }
+                                      );
+                                      setTeammates(newTeammates);
+                                    }}
+                                    className="input w-full"
+                                  />
+                                </div>
+                                
+                                {teamSize > 1 && (
+                                  <div className="space-y-2">
+                                    <p className="text-sm font-semibold">Teammate Details ({teamSize - 1} teammate{teamSize > 2 ? 's' : ''})</p>
+                                    {teammates.slice(0, teamSize - 1).map((teammate, index) => (
+                                      <div key={index} className="p-3 bg-gray-50 dark:bg-gray-800 rounded space-y-2">
+                                        <p className="text-xs font-semibold">Teammate {index + 1}</p>
+                                        <input
+                                          type="text"
+                                          placeholder="Name"
+                                          value={teammate.name}
+                                          onChange={(e) => handleTeammateChange(index, 'name', e.target.value)}
+                                          className="input w-full text-sm"
+                                        />
+                                        <input
+                                          type="email"
+                                          placeholder="Email"
+                                          value={teammate.email}
+                                          onChange={(e) => handleTeammateChange(index, 'email', e.target.value)}
+                                          className="input w-full text-sm"
+                                        />
+                                        <input
+                                          type="tel"
+                                          placeholder="Phone"
+                                          value={teammate.phone}
+                                          onChange={(e) => handleTeammateChange(index, 'phone', e.target.value)}
+                                          className="input w-full text-sm"
+                                        />
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => handleRegister(hackathon._id)}
+                                    className="btn-primary flex-1"
+                                  >
+                                    Confirm Registration
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setRegisteringFor(null);
+                                      setTeamSize(1);
+                                      setTeammates([{ name: "", email: "", phone: "" }]);
+                                    }}
+                                    className="px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          }
+                          
+                          return (
+                            <button
+                              onClick={() => setRegisteringFor(hackathon._id)}
+                              className="btn-primary w-full"
+                              disabled={hackathon.status !== 'open'}
+                            >
+                              {hackathon.status === 'open' ? 'Register Now' : 'Registration Closed'}
+                            </button>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>

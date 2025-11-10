@@ -6,7 +6,11 @@ const {
   getHackathonById,
   getAllHackathonsWithDetails,
   updateHackathonStatus,
-  deleteHackathon
+  deleteHackathon,
+  registerForHackathon,
+  getMyRegistrations,
+  getHackathonRegistrations,
+  updateRegistrationStatus
 } = require('../controllers/hackathonController');
 const { auth, adminAuth } = require('../middleware/auth');
 
@@ -16,5 +20,11 @@ router.get('/:id', getHackathonById);
 router.get('/admin/all', adminAuth, getAllHackathonsWithDetails);
 router.put('/:id/status', adminAuth, updateHackathonStatus);
 router.delete('/:id', adminAuth, deleteHackathon);
+
+// Registration routes
+router.post('/register', auth, registerForHackathon);
+router.get('/my-registrations', auth, getMyRegistrations);
+router.get('/:id/registrations', auth, getHackathonRegistrations);
+router.put('/registration/:id/status', auth, updateRegistrationStatus);
 
 module.exports = router;
