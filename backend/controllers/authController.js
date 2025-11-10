@@ -41,6 +41,7 @@ const register = async (req, res) => {
       email: user.email,
       role: user.role,
       phone: user.phone,
+      registrationNumber: user.registrationNumber,
       token
     });
   } catch (error) {

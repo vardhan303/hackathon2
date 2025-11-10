@@ -13,8 +13,7 @@ const hackathonRegistrationSchema = new mongoose.Schema({
   },
   registrationNumber: {
     type: String,
-    required: true,
-    unique: true
+    required: true
   },
   teamSize: {
     type: Number,
@@ -27,9 +26,6 @@ const hackathonRegistrationSchema = new mongoose.Schema({
       required: true
     },
     email: {
-      type: String
-    },
-    phone: {
       type: String
     }
   }],
@@ -44,16 +40,6 @@ const hackathonRegistrationSchema = new mongoose.Schema({
   }
 }, {
   timestamps: true
-});
-
-// Generate unique registration number
-hackathonRegistrationSchema.pre('save', async function(next) {
-  if (this.isNew && !this.registrationNumber) {
-    const timestamp = Date.now().toString().slice(-6);
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    this.registrationNumber = `HACK${timestamp}${random}`;
-  }
-  next();
 });
 
 module.exports = mongoose.model('HackathonRegistration', hackathonRegistrationSchema);

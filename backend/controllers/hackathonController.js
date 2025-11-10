@@ -112,10 +112,17 @@ const registerForHackathon = async (req, res) => {
       return res.status(400).json({ message: 'You are already registered for this hackathon' });
     }
 
+    // Get user's registration number
+    const user = await User.findById(userId);
+    if (!user.registrationNumber) {
+      return res.status(400).json({ message: 'User registration number not found' });
+    }
+
     // Create registration
     const registration = new HackathonRegistration({
       hackathonId,
       userId,
+      registrationNumber: user.registrationNumber,
       teamSize,
       teammates
     });
@@ -150,7 +157,7 @@ const getMyRegistrations = async (req, res) => {
 const getHackathonRegistrations = async (req, res) => {
   try {
     const registrations = await HackathonRegistration.find({ hackathonId: req.params.id })
-      .populate('userId', 'name email phone')
+      .populate('userId', 'name email phone registrationNumber')
       .sort({ createdAt: -1 });
     
     res.json(registrations);

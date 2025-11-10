@@ -205,7 +205,7 @@ export default function MyHackathons() {
                               <p className="text-sm font-semibold mb-2">Teammates:</p>
                               {reg.teammates.map((teammate, idx) => (
                                 <div key={idx} className="text-xs text-gray-600 dark:text-gray-400 ml-4">
-                                  {idx + 1}. {teammate.name} - {teammate.email} {teammate.phone && `- ${teammate.phone}`}
+                                 {idx + 1}. {teammate.name} - {teammate.email}
                                 </div>
                               ))}
                             </div>

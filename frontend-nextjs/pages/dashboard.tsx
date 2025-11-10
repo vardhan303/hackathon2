@@ -38,7 +38,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [registeringFor, setRegisteringFor] = useState<string | null>(null);
   const [teamSize, setTeamSize] = useState(1);
-  const [teammates, setTeammates] = useState([{ name: "", email: "", phone: "" }]);
+  const [teammates, setTeammates] = useState([{ name: "", email: "" }]);
   const router = useRouter();
 
   useEffect(() => {
@@ -103,7 +103,7 @@ export default function Dashboard() {
       alert(`Registration successful! Your registration number is: ${response.data.registrationNumber}`);
       setRegisteringFor(null);
       setTeamSize(1);
-      setTeammates([{ name: "", email: "", phone: "" }]);
+      setTeammates([{ name: "", email: "" }]);
       fetchMyRegistrations();
     } catch (err: any) {
       alert(err.response?.data?.message || "Registration failed");
@@ -431,13 +431,6 @@ export default function Dashboard() {
                                           onChange={(e) => handleTeammateChange(index, 'email', e.target.value)}
                                           className="input w-full text-sm"
                                         />
-                                        <input
-                                          type="tel"
-                                          placeholder="Phone"
-                                          value={teammate.phone}
-                                          onChange={(e) => handleTeammateChange(index, 'phone', e.target.value)}
-                                          className="input w-full text-sm"
-                                        />
                                       </div>
                                     ))}
                                   </div>
@@ -454,7 +447,7 @@ export default function Dashboard() {
                                     onClick={() => {
                                       setRegisteringFor(null);
                                       setTeamSize(1);
-                                      setTeammates([{ name: "", email: "", phone: "" }]);
+                                      setTeammates([{ name: "", email: "" }]);
                                     }}
                                     className="px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
                                   >
