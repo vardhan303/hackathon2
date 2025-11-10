@@ -19,9 +19,28 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  process.env.FRONTEND_URL?.replace(/\/$/, ''), // Remove trailing slash
+  'https://hackathon2-frontend-nextjs.vercel.app',
+  'http://localhost:3000',
+  'http://localhost:3001'
+].filter(Boolean);
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
-  credentials: true
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1 || process.env.FRONTEND_URL === '*') {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 
@@ -52,11 +71,17 @@ const connectDB = async () => {
 // Initialize connection
 connectDB();
 
-// Routes
+// Routes - with /api prefix
 app.use('/api/auth', authRoutes);
 app.use('/api/request', requestRoutes);
 app.use('/api/hackathons', hackathonRoutes);
 app.use('/api/judge', judgeRoutes);
+
+// Routes - without /api prefix (for compatibility)
+app.use('/auth', authRoutes);
+app.use('/request', requestRoutes);
+app.use('/hackathons', hackathonRoutes);
+app.use('/judge', judgeRoutes);
 
 // Health check route
 app.get('/', (req, res) => {
