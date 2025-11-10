@@ -5,7 +5,7 @@ const User = require('../models/User');
 // Register user
 const register = async (req, res) => {
   try {
-    const { name, email, password, role, phone, teamSize, teammates, hackathonId } = req.body;
+    const { name, email, password, role, phone } = req.body;
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -23,10 +23,7 @@ const register = async (req, res) => {
       email,
       password: hashedPassword,
       role: role || 'user',
-      phone,
-      teamSize,
-      teammates,
-      hackathonId
+      phone
     });
 
     await user.save();
@@ -44,9 +41,6 @@ const register = async (req, res) => {
       email: user.email,
       role: user.role,
       phone: user.phone,
-      registrationNumber: user.registrationNumber,
-      teamSize: user.teamSize,
-      teammates: user.teammates,
       token
     });
   } catch (error) {

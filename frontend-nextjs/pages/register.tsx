@@ -11,37 +11,18 @@ export default function Register() {
     password: "",
     confirmPassword: "",
     phone: "",
-    role: "user",
-    teamSize: 1,
-    teammates: [{ name: "", email: "", phone: "" }]
+    role: "user"
   });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showTeamFields, setShowTeamFields] = useState(false);
   const router = useRouter();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]: name === 'teamSize' ? parseInt(value) || 1 : value
+      [e.target.name]: e.target.value
     });
-
-    // Update teammates array when team size changes
-    if (name === 'teamSize') {
-      const size = parseInt(value) || 1;
-      const newTeammates = Array.from({ length: Math.max(0, size - 1) }, (_, i) => 
-        formData.teammates[i] || { name: "", email: "", phone: "" }
-      );
-      setFormData(prev => ({ ...prev, teammates: newTeammates }));
-    }
-  };
-
-  const handleTeammateChange = (index: number, field: string, value: string) => {
-    const newTeammates = [...formData.teammates];
-    newTeammates[index] = { ...newTeammates[index], [field]: value };
-    setFormData({ ...formData, teammates: newTeammates });
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -62,19 +43,11 @@ export default function Register() {
         email: formData.email,
         password: formData.password,
         phone: formData.phone,
-        role: formData.role,
-        teamSize: showTeamFields ? formData.teamSize : undefined,
-        teammates: showTeamFields ? formData.teammates : undefined
+        role: formData.role
       });
       
-      const registrationNumber = response.data.registrationNumber;
-      
-      setSuccess(
-        registrationNumber 
-          ? `Registration successful! Your registration number is: ${registrationNumber}. Redirecting to login...`
-          : "Registration successful! Redirecting to login..."
-      );
-      setTimeout(() => router.push("/"), 4000);
+      setSuccess("Registration successful! Redirecting to login...");
+      setTimeout(() => router.push("/"), 2000);
     } catch (err: any) {
       setError(err.response?.data?.message || "Registration failed");
     } finally {
@@ -229,82 +202,6 @@ export default function Register() {
                     </div>
                   </button>
                 </div>
-              </div>
-
-              {/* Hackathon Registration Toggle */}
-              <div className="border-t dark:border-gray-700 pt-6">
-                <div className="flex items-center justify-between mb-4">
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Register for Hackathon with Team?
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setShowTeamFields(!showTeamFields)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      showTeamFields ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        showTeamFields ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
-                </div>
-
-                {showTeamFields && (
-                  <div className="space-y-4 animate-fade-in">
-                    <div>
-                      <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
-                        Team Size (including you)
-                      </label>
-                      <input
-                        type="number"
-                        name="teamSize"
-                        min="1"
-                        max="10"
-                        className="input w-full"
-                        value={formData.teamSize}
-                        onChange={handleChange}
-                      />
-                    </div>
-
-                    {formData.teamSize > 1 && (
-                      <div className="space-y-4">
-                        <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                          Teammate Details ({formData.teamSize - 1} teammate{formData.teamSize > 2 ? 's' : ''})
-                        </h4>
-                        {formData.teammates.map((teammate, index) => (
-                          <div key={index} className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg space-y-3">
-                            <h5 className="text-xs font-semibold text-gray-600 dark:text-gray-400">Teammate {index + 1}</h5>
-                            <input
-                              type="text"
-                              placeholder="Name"
-                              className="input w-full"
-                              value={teammate.name}
-                              onChange={(e) => handleTeammateChange(index, 'name', e.target.value)}
-                              required={showTeamFields}
-                            />
-                            <input
-                              type="email"
-                              placeholder="Email"
-                              className="input w-full"
-                              value={teammate.email}
-                              onChange={(e) => handleTeammateChange(index, 'email', e.target.value)}
-                            />
-                            <input
-                              type="tel"
-                              placeholder="Phone"
-                              className="input w-full"
-                              value={teammate.phone}
-                              onChange={(e) => handleTeammateChange(index, 'phone', e.target.value)}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
 
               <button
