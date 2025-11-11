@@ -55,14 +55,6 @@ export default function JudgeDashboard() {
   const [myRequests, setMyRequests] = useState<JudgeRequest[]>([]);
   const [selectedHackathon, setSelectedHackathon] = useState<string | null>(null);
   const [teams, setTeams] = useState<Team[]>([]);
-  const [evaluatingTeam, setEvaluatingTeam] = useState<Team | null>(null);
-  const [criteria, setCriteria] = useState({
-    innovation: 0,
-    technical: 0,
-    design: 0,
-    presentation: 0
-  });
-  const [feedback, setFeedback] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -121,37 +113,6 @@ export default function JudgeDashboard() {
     }
   };
 
-  const startEvaluation = (team: Team) => {
-    setEvaluatingTeam(team);
-    if (team.evaluation) {
-      setCriteria(team.evaluation.criteria);
-      setFeedback(team.evaluation.feedback || "");
-    } else {
-      setCriteria({ innovation: 0, technical: 0, design: 0, presentation: 0 });
-      setFeedback("");
-    }
-  };
-
-  const submitEvaluation = async () => {
-    if (!evaluatingTeam || !selectedHackathon) return;
-
-    try {
-      await api.post("/judge/evaluate", {
-        hackathonId: selectedHackathon,
-        registrationId: evaluatingTeam._id,
-        criteria,
-        feedback
-      });
-      alert("Evaluation submitted successfully!");
-      setEvaluatingTeam(null);
-      fetchTeams(selectedHackathon);
-    } catch (err: any) {
-      alert(err.response?.data?.message || "Failed to submit evaluation");
-    }
-  };
-
-  const totalScore = criteria.innovation + criteria.technical + criteria.design + criteria.presentation;
-
   return (
     <ProtectedRoute role="judge">
       <Navbar />
@@ -164,7 +125,7 @@ export default function JudgeDashboard() {
                 <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
                   Judge Dashboard ⚖️
                 </h1>
-                <p className="text-gray-600 dark:text-gray-400">Evaluate teams and provide feedback</p>
+                <p className="text-gray-600 dark:text-gray-400">View participating teams in assigned hackathons</p>
               </div>
               <div className="flex gap-2">
                 <button
@@ -247,7 +208,7 @@ export default function JudgeDashboard() {
                           onClick={() => fetchTeams(hackathon._id)}
                           className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all"
                         >
-                          Evaluate Teams
+                          View Teams
                         </button>
                       </div>
                     </div>
@@ -257,12 +218,12 @@ export default function JudgeDashboard() {
             </div>
           )}
 
-          {/* Teams Evaluation View */}
-          {view === 'assigned' && selectedHackathon && !evaluatingTeam && (
+          {/* Teams View */}
+          {view === 'assigned' && selectedHackathon && (
             <div className="card p-6 animate-slide-up">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-                  Teams to Evaluate ({teams.length})
+                  Participating Teams ({teams.length})
                 </h2>
                 <button
                   onClick={() => { setSelectedHackathon(null); setTeams([]); }}
@@ -285,54 +246,36 @@ export default function JudgeDashboard() {
                   {teams.map((team) => (
                     <div
                       key={team._id}
-                      className="border-2 border-gray-200 dark:border-gray-700 p-6 rounded-lg bg-white dark:bg-gray-800"
+                      className="border-2 border-gray-200 dark:border-gray-700 p-6 rounded-lg bg-white dark:bg-gray-800 hover:shadow-lg transition-all"
                     >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                              {team.userId.name}
-                            </h3>
-                            {team.evaluation && (
-                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                team.evaluation.status === 'submitted'
-                                  ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                                  : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
-                              }`}>
-                                {team.evaluation.status === 'submitted' ? '✓ Evaluated' : 'Draft'}
-                              </span>
-                            )}
+                      <div className="flex items-start gap-4">
+                        <div className="flex-shrink-0">
+                          <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-2xl">
+                            {team.userId.name.charAt(0).toUpperCase()}
                           </div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            Registration: {team.registrationNumber} | Team Size: {team.teamSize}
-                          </p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">
-                            Email: {team.userId.email}
-                          </p>
-                          {team.evaluation && (
-                            <div className="mt-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                              <p className="text-sm font-semibold text-purple-800 dark:text-purple-300">
-                                Current Score: {team.evaluation.totalScore}/100
-                              </p>
-                              <div className="grid grid-cols-4 gap-2 mt-2 text-xs text-gray-600 dark:text-gray-400">
-                                <span>Innovation: {team.evaluation.criteria.innovation}/25</span>
-                                <span>Technical: {team.evaluation.criteria.technical}/25</span>
-                                <span>Design: {team.evaluation.criteria.design}/25</span>
-                                <span>Presentation: {team.evaluation.criteria.presentation}/25</span>
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                            {team.userId.name}
+                          </h3>
+                          <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+                            <p>📧 Email: {team.userId.email}</p>
+                            <p>🎫 Registration: {team.registrationNumber}</p>
+                            <p>👥 Team Size: {team.teamSize} members</p>
+                          </div>
+                          {team.teammates && team.teammates.length > 0 && (
+                            <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                              <p className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-2">Team Members:</p>
+                              <div className="space-y-1">
+                                {team.teammates.map((teammate, index) => (
+                                  <div key={index} className="text-xs text-gray-600 dark:text-gray-400">
+                                    {index + 1}. {teammate.name} ({teammate.email})
+                                  </div>
+                                ))}
                               </div>
                             </div>
                           )}
                         </div>
-                        <button
-                          onClick={() => startEvaluation(team)}
-                          className={`px-6 py-3 rounded-lg font-semibold ${
-                            team.evaluation
-                              ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                              : 'bg-purple-600 hover:bg-purple-700 text-white'
-                          }`}
-                        >
-                          {team.evaluation ? 'Edit Evaluation' : 'Start Evaluation'}
-                        </button>
                       </div>
                     </div>
                   ))}
@@ -341,137 +284,7 @@ export default function JudgeDashboard() {
             </div>
           )}
 
-          {/* Evaluation Modal */}
-          {evaluatingTeam && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-                <div className="p-6 space-y-6">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                      Evaluate: {evaluatingTeam.userId.name}
-                    </h3>
-                    <button
-                      onClick={() => setEvaluatingTeam(null)}
-                      className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                    >
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
 
-                  {/* Scoring Criteria */}
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      {/* Innovation */}
-                      <div className="space-y-2">
-                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                          💡 Innovation (0-25)
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          max="25"
-                          value={criteria.innovation}
-                          onChange={(e) => setCriteria({...criteria, innovation: Math.min(25, Math.max(0, parseInt(e.target.value) || 0))})}
-                          className="input w-full"
-                        />
-                      </div>
-
-                      {/* Technical */}
-                      <div className="space-y-2">
-                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                          💻 Technical Skill (0-25)
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          max="25"
-                          value={criteria.technical}
-                          onChange={(e) => setCriteria({...criteria, technical: Math.min(25, Math.max(0, parseInt(e.target.value) || 0))})}
-                          className="input w-full"
-                        />
-                      </div>
-
-                      {/* Design */}
-                      <div className="space-y-2">
-                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                          🎨 Design & UX (0-25)
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          max="25"
-                          value={criteria.design}
-                          onChange={(e) => setCriteria({...criteria, design: Math.min(25, Math.max(0, parseInt(e.target.value) || 0))})}
-                          className="input w-full"
-                        />
-                      </div>
-
-                      {/* Presentation */}
-                      <div className="space-y-2">
-                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                          🎤 Presentation (0-25)
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          max="25"
-                          value={criteria.presentation}
-                          onChange={(e) => setCriteria({...criteria, presentation: Math.min(25, Math.max(0, parseInt(e.target.value) || 0))})}
-                          className="input w-full"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Total Score Display */}
-                    <div className="p-4 bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 rounded-lg border-2 border-purple-300 dark:border-purple-700">
-                      <div className="flex items-center justify-between">
-                        <span className="text-lg font-bold text-purple-800 dark:text-purple-300">Total Score:</span>
-                        <span className="text-3xl font-bold text-purple-600 dark:text-purple-400">{totalScore}/100</span>
-                      </div>
-                      <div className="mt-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
-                        <div
-                          className="bg-gradient-to-r from-purple-600 to-pink-600 h-3 rounded-full transition-all duration-300"
-                          style={{ width: `${totalScore}%` }}
-                        ></div>
-                      </div>
-                    </div>
-
-                    {/* Feedback */}
-                    <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                        📝 Feedback (Optional, max 500 characters)
-                      </label>
-                      <textarea
-                        value={feedback}
-                        onChange={(e) => setFeedback(e.target.value.slice(0, 500))}
-                        className="input w-full h-32"
-                        placeholder="Provide constructive feedback..."
-                      />
-                      <p className="text-xs text-gray-500">{feedback.length}/500 characters</p>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-3 pt-4">
-                    <button
-                      onClick={submitEvaluation}
-                      className="btn-primary flex-1"
-                    >
-                      Submit Evaluation
-                    </button>
-                    <button
-                      onClick={() => setEvaluatingTeam(null)}
-                      className="px-6 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 font-semibold"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Request to Judge View */}
           {view === 'request' && (
