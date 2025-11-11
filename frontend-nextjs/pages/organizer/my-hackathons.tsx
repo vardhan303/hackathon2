@@ -13,6 +13,14 @@ interface Hackathon {
   endDate: string;
   status: string;
   maxTeams: number;
+  registrationStats?: {
+    total: number;
+    approved: number;
+    pending: number;
+    maxTeams: number;
+    isFull: boolean;
+    spotsLeft: number;
+  };
 }
 
 interface Registration {
@@ -34,11 +42,21 @@ interface Registration {
   registeredAt: string;
 }
 
+interface RegistrationStats {
+  total: number;
+  approved: number;
+  pending: number;
+  maxTeams: number;
+  isFull: boolean;
+  spotsLeft: number;
+}
+
 export default function MyHackathons() {
   const { user } = useContext(AuthContext);
   const [hackathons, setHackathons] = useState<Hackathon[]>([]);
   const [selectedHackathon, setSelectedHackathon] = useState<string | null>(null);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [registrationStats, setRegistrationStats] = useState<RegistrationStats | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -63,7 +81,8 @@ export default function MyHackathons() {
     setLoading(true);
     try {
       const res = await api.get(`/hackathons/${hackathonId}/registrations`);
-      setRegistrations(res.data);
+      setRegistrations(res.data.registrations || res.data);
+      setRegistrationStats(res.data.stats || null);
       setSelectedHackathon(hackathonId);
     } catch (err) {
       console.error("Error fetching registrations:", err);
@@ -174,13 +193,34 @@ export default function MyHackathons() {
                         <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                           {hackathon.description}
                         </p>
-                        <div className="flex gap-4 mt-2 text-sm items-center">
+                        <div className="flex gap-4 mt-3 text-sm items-center flex-wrap">
                           <span className={`px-2 py-1 rounded ${getStatusColor(hackathon.status)}`}>
                             {hackathon.status.toUpperCase()}
                           </span>
                           <span className="text-gray-600 dark:text-gray-400">
-                            Starts: {new Date(hackathon.startDate).toLocaleDateString()}
+                            📅 Starts: {new Date(hackathon.startDate).toLocaleDateString()}
                           </span>
+                          {hackathon.registrationStats && (
+                            <>
+                              <span className={`px-3 py-1 rounded-lg font-semibold ${
+                                hackathon.registrationStats.isFull 
+                                  ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                                  : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
+                              }`}>
+                                👥 {hackathon.registrationStats.approved}/{hackathon.registrationStats.maxTeams} Teams
+                              </span>
+                              {hackathon.registrationStats.isFull && (
+                                <span className="px-3 py-1 rounded-lg bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400 font-semibold">
+                                  🚫 FULL
+                                </span>
+                              )}
+                              {hackathon.registrationStats.pending > 0 && (
+                                <span className="px-2 py-1 rounded bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 text-xs font-semibold">
+                                  ⏳ {hackathon.registrationStats.pending} Pending
+                                </span>
+                              )}
+                            </>
+                          )}
                         </div>
                       </div>
                       <div className="flex gap-2">
@@ -210,15 +250,47 @@ export default function MyHackathons() {
 
           {selectedHackathon && (
             <div className="card p-6 animate-slide-up">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-gradient-to-r from-green-500 to-teal-500 rounded-lg">
-                  <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
-                  </svg>
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-gradient-to-r from-green-500 to-teal-500 rounded-lg">
+                    <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                      Team Registrations
+                    </h2>
+                    {registrationStats && (
+                      <div className="flex gap-3 mt-1 text-sm">
+                        <span className="text-gray-600 dark:text-gray-400">
+                          ✅ Approved: <span className="font-bold text-green-600">{registrationStats.approved}</span>
+                        </span>
+                        <span className="text-gray-600 dark:text-gray-400">
+                          ⏳ Pending: <span className="font-bold text-yellow-600">{registrationStats.pending}</span>
+                        </span>
+                        <span className="text-gray-600 dark:text-gray-400">
+                          📊 Total: <span className="font-bold">{registrationStats.total}</span>/{registrationStats.maxTeams}
+                        </span>
+                        {registrationStats.isFull ? (
+                          <span className="px-2 py-0.5 rounded bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 font-semibold text-xs">
+                            🚫 CAPACITY FULL
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 font-semibold text-xs">
+                            ✅ {registrationStats.spotsLeft} Spots Left
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Team Registrations ({registrations.length})
-                </h2>
+                <button
+                  onClick={() => { setSelectedHackathon(null); setRegistrations([]); setRegistrationStats(null); }}
+                  className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600"
+                >
+                  ← Back
+                </button>
               </div>
 
               {loading ? (

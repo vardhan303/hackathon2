@@ -53,7 +53,37 @@ const getHackathonById = async (req, res) => {
 const getAllHackathonsWithDetails = async (req, res) => {
   try {
     const hackathons = await Hackathon.find();
-    res.json(hackathons);
+    
+    // Add registration count for each hackathon
+    const hackathonsWithDetails = await Promise.all(
+      hackathons.map(async (hackathon) => {
+        const totalRegistrations = await HackathonRegistration.countDocuments({ 
+          hackathonId: hackathon._id 
+        });
+        const approvedRegistrations = await HackathonRegistration.countDocuments({ 
+          hackathonId: hackathon._id,
+          status: 'approved'
+        });
+        const pendingRegistrations = await HackathonRegistration.countDocuments({ 
+          hackathonId: hackathon._id,
+          status: 'pending'
+        });
+        
+        return {
+          ...hackathon.toObject(),
+          registrationStats: {
+            total: totalRegistrations,
+            approved: approvedRegistrations,
+            pending: pendingRegistrations,
+            maxTeams: hackathon.maxTeams,
+            isFull: approvedRegistrations >= hackathon.maxTeams,
+            spotsLeft: Math.max(0, hackathon.maxTeams - approvedRegistrations)
+          }
+        };
+      })
+    );
+    
+    res.json(hackathonsWithDetails);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -156,11 +186,30 @@ const getMyRegistrations = async (req, res) => {
 // Get all registrations for a hackathon (Admin/Organizer)
 const getHackathonRegistrations = async (req, res) => {
   try {
+    const hackathon = await Hackathon.findById(req.params.id);
+    if (!hackathon) {
+      return res.status(404).json({ message: 'Hackathon not found' });
+    }
+    
     const registrations = await HackathonRegistration.find({ hackathonId: req.params.id })
       .populate('userId', 'name email phone registrationNumber')
       .sort({ createdAt: -1 });
     
-    res.json(registrations);
+    const totalCount = registrations.length;
+    const approvedCount = registrations.filter(r => r.status === 'approved').length;
+    const pendingCount = registrations.filter(r => r.status === 'pending').length;
+    
+    res.json({
+      registrations,
+      stats: {
+        total: totalCount,
+        approved: approvedCount,
+        pending: pendingCount,
+        maxTeams: hackathon.maxTeams,
+        isFull: approvedCount >= hackathon.maxTeams,
+        spotsLeft: Math.max(0, hackathon.maxTeams - approvedCount)
+      }
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
