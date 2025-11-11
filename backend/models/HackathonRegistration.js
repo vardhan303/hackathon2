@@ -47,4 +47,8 @@ const hackathonRegistrationSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// Ensure a user can only register once per hackathon
+// Remove any unique constraint on registrationNumber alone
+hackathonRegistrationSchema.index({ hackathonId: 1, userId: 1 }, { unique: true });
+
 module.exports = mongoose.model('HackathonRegistration', hackathonRegistrationSchema);

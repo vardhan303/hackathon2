@@ -318,4 +318,40 @@ const fixRegistrationNumbers = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getMe, getAllUsers, getUserById, updateUserStatus, changePassword, seedAdmin, fixRegistrationNumbers };
+// Fix duplicate key error on hackathon registrations
+const fixRegistrationIndexes = async (req, res) => {
+  try {
+    const HackathonRegistration = require('../models/HackathonRegistration');
+    const collection = HackathonRegistration.collection;
+    
+    // Get all indexes
+    const indexes = await collection.indexes();
+    console.log('Current indexes:', indexes);
+    
+    // Drop the registrationNumber_1 index if it exists
+    try {
+      await collection.dropIndex('registrationNumber_1');
+      console.log('Dropped registrationNumber_1 index');
+    } catch (err) {
+      console.log('Index registrationNumber_1 does not exist or already dropped:', err.message);
+    }
+    
+    // Ensure the correct compound index exists
+    await collection.createIndex({ hackathonId: 1, userId: 1 }, { unique: true });
+    console.log('Created compound index on hackathonId and userId');
+    
+    // Get updated indexes
+    const updatedIndexes = await collection.indexes();
+    
+    res.json({
+      message: 'Index fix completed successfully',
+      oldIndexes: indexes,
+      newIndexes: updatedIndexes
+    });
+  } catch (error) {
+    console.error('Error fixing indexes:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { register, login, getMe, getAllUsers, getUserById, updateUserStatus, changePassword, seedAdmin, fixRegistrationNumbers, fixRegistrationIndexes };
