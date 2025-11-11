@@ -260,8 +260,7 @@ export default function AdminManagement() {
                             <strong>Organization:</strong> {hackathon.organization}
                           </p>
                           <p>
-                            <strong>Location:</strong>{" "}
-                            {hackathon.locationType === "online" ? "Online" : hackathon.venue}
+                            <strong>Venue:</strong> {hackathon.venue || (hackathon.locationType === "online" ? "Online" : "Not specified")}
                           </p>
                           <p>
                             <strong>Start:</strong> {formatDate(hackathon.startDate)}
