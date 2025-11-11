@@ -14,16 +14,21 @@ const {
 } = require('../controllers/hackathonController');
 const { auth, adminAuth } = require('../middleware/auth');
 
+// Specific routes first (before generic /:id routes)
+router.get('/details', getAllHackathonsWithDetails); // Get all with stats
+router.get('/my-registrations', auth, getMyRegistrations); // User's registrations
+router.post('/register', auth, registerForHackathon); // Register for hackathon
+
+// Admin routes
+router.delete('/:id', adminAuth, deleteHackathon);
+
+// Hackathon CRUD
 router.post('/', auth, createHackathon);
 router.get('/', getAllHackathons);
 router.get('/:id', getHackathonById);
-router.get('/admin/all', adminAuth, getAllHackathonsWithDetails);
-router.put('/:id/status', adminAuth, updateHackathonStatus);
-router.delete('/:id', adminAuth, deleteHackathon);
+router.put('/:id/status', auth, updateHackathonStatus); // Allow organizers too
 
-// Registration routes
-router.post('/register', auth, registerForHackathon);
-router.get('/my-registrations', auth, getMyRegistrations);
+// Registration management
 router.get('/:id/registrations', auth, getHackathonRegistrations);
 router.put('/registration/:id/status', auth, updateRegistrationStatus);
 
