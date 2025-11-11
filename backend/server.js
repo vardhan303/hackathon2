@@ -23,6 +23,7 @@ const allowedOrigins = [
   process.env.FRONTEND_URL,
   process.env.FRONTEND_URL?.replace(/\/$/, ''), // Remove trailing slash
   'https://hackathon2-frontend-nextjs.vercel.app',
+  'https://hackathon2-frontend-nextjs-git-master-vardhan-gosus-projects.vercel.app',
   'http://localhost:3000',
   'http://localhost:3001'
 ].filter(Boolean);
@@ -31,6 +32,11 @@ app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
+    
+    // Allow all Vercel preview deployments
+    if (origin.includes('vercel.app') || origin.includes('localhost')) {
+      return callback(null, true);
+    }
     
     if (allowedOrigins.indexOf(origin) !== -1 || process.env.FRONTEND_URL === '*') {
       callback(null, true);
