@@ -37,11 +37,32 @@ const userSchema = new mongoose.Schema({
 });
 
 // Generate unique registration number before saving
-userSchema.pre('save', function(next) {
+userSchema.pre('save', async function(next) {
   if (this.isNew && !this.registrationNumber) {
-    const timestamp = Date.now().toString().slice(-6);
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    this.registrationNumber = `USR${timestamp}${random}`;
+    let isUnique = false;
+    let attempts = 0;
+    const maxAttempts = 10;
+    
+    while (!isUnique && attempts < maxAttempts) {
+      const timestamp = Date.now().toString();
+      const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+      this.registrationNumber = `USR${timestamp}${random}`;
+      
+      // Check if this registration number already exists
+      const existing = await mongoose.model('User').findOne({ 
+        registrationNumber: this.registrationNumber 
+      });
+      
+      if (!existing) {
+        isUnique = true;
+      } else {
+        attempts++;
+      }
+    }
+    
+    if (!isUnique) {
+      throw new Error('Failed to generate unique registration number');
+    }
   }
   next();
 });
