@@ -211,4 +211,42 @@ const changePassword = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getMe, getAllUsers, getUserById, updateUserStatus, changePassword };
+// Seed admin user (for initial setup only)
+const seedAdmin = async (req, res) => {
+  try {
+    // Check if admin already exists
+    const existingAdmin = await User.findOne({ email: 'admin@hackathon.com' });
+    
+    if (existingAdmin) {
+      return res.status(400).json({ message: 'Admin user already exists' });
+    }
+
+    // Create admin user
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash('admin123', salt);
+
+    const admin = new User({
+      name: 'System Admin',
+      email: 'admin@hackathon.com',
+      password: hashedPassword,
+      role: 'admin',
+      approved: true
+    });
+
+    await admin.save();
+    
+    res.status(201).json({ 
+      message: 'Admin user created successfully!',
+      credentials: {
+        email: 'admin@hackathon.com',
+        password: 'admin123',
+        note: 'Please change password after first login'
+      }
+    });
+  } catch (error) {
+    console.error('Error seeding admin:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { register, login, getMe, getAllUsers, getUserById, updateUserStatus, changePassword, seedAdmin };
