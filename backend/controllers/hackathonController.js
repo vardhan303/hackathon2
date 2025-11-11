@@ -164,9 +164,38 @@ const registerForHackathon = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // If user doesn't have a registration number, generate one now
     if (!user.registrationNumber) {
-      console.log('User has no registration number:', userId);
-      return res.status(400).json({ message: 'User registration number not found. Please contact admin.' });
+      console.log('User has no registration number, generating one:', userId);
+      
+      let isUnique = false;
+      let attempts = 0;
+      const maxAttempts = 10;
+      let regNumber = '';
+      
+      while (!isUnique && attempts < maxAttempts) {
+        const timestamp = Date.now().toString();
+        const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+        regNumber = `USR${timestamp}${random}`;
+        
+        const existing = await User.findOne({ registrationNumber: regNumber });
+        
+        if (!existing) {
+          isUnique = true;
+        } else {
+          attempts++;
+          await new Promise(resolve => setTimeout(resolve, 10));
+        }
+      }
+      
+      if (!isUnique) {
+        console.log('Failed to generate unique registration number for user:', userId);
+        return res.status(500).json({ message: 'Failed to generate registration number. Please contact admin.' });
+      }
+      
+      user.registrationNumber = regNumber;
+      await user.save();
+      console.log('Generated registration number for user:', regNumber);
     }
 
     // Create registration

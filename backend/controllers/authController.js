@@ -249,4 +249,73 @@ const seedAdmin = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getMe, getAllUsers, getUserById, updateUserStatus, changePassword, seedAdmin };
+// Fix users without registration numbers
+const fixRegistrationNumbers = async (req, res) => {
+  try {
+    // Find all users without registration numbers
+    const usersWithoutRegNum = await User.find({ 
+      $or: [
+        { registrationNumber: { $exists: false } },
+        { registrationNumber: null },
+        { registrationNumber: '' }
+      ]
+    });
+
+    console.log(`Found ${usersWithoutRegNum.length} users without registration numbers`);
+
+    let fixed = 0;
+    let errors = [];
+
+    for (const user of usersWithoutRegNum) {
+      try {
+        // Generate unique registration number
+        let isUnique = false;
+        let attempts = 0;
+        const maxAttempts = 10;
+        let regNumber = '';
+        
+        while (!isUnique && attempts < maxAttempts) {
+          const timestamp = Date.now().toString();
+          const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+          regNumber = `USR${timestamp}${random}`;
+          
+          const existing = await User.findOne({ registrationNumber: regNumber });
+          
+          if (!existing) {
+            isUnique = true;
+          } else {
+            attempts++;
+            // Small delay to ensure different timestamp
+            await new Promise(resolve => setTimeout(resolve, 10));
+          }
+        }
+        
+        if (!isUnique) {
+          errors.push({ userId: user._id, email: user.email, error: 'Could not generate unique number' });
+          continue;
+        }
+        
+        user.registrationNumber = regNumber;
+        await user.save();
+        fixed++;
+        console.log(`Fixed user ${user.email} - assigned ${regNumber}`);
+      } catch (err) {
+        console.error(`Error fixing user ${user.email}:`, err);
+        errors.push({ userId: user._id, email: user.email, error: err.message });
+      }
+    }
+
+    res.json({
+      message: 'Registration numbers fix completed',
+      total: usersWithoutRegNum.length,
+      fixed: fixed,
+      errors: errors.length,
+      errorDetails: errors
+    });
+  } catch (error) {
+    console.error('Error fixing registration numbers:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { register, login, getMe, getAllUsers, getUserById, updateUserStatus, changePassword, seedAdmin, fixRegistrationNumbers };
