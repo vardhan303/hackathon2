@@ -37,4 +37,44 @@ const adminAuth = async (req, res, next) => {
   }
 };
 
-module.exports = { auth, adminAuth };
+const judgeAuth = async (req, res, next) => {
+  try {
+    const token = req.header('Authorization').replace('Bearer ', '');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findOne({ _id: decoded._id });
+
+    if (!user || (user.role !== 'judge' && user.role !== 'admin')) {
+      throw new Error();
+    }
+
+    req.token = token;
+    req.user = user;
+    next();
+  } catch (error) {
+    res.status(401).json({ message: 'Judge access required.' });
+  }
+};
+
+const organizerAuth = async (req, res, next) => {
+  try {
+    const token = req.header('Authorization').replace('Bearer ', '');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findOne({ _id: decoded._id });
+
+    if (!user || (user.role === 'user' && !user.approved)) {
+      return res.status(403).json({ message: 'Organizer approval required.' });
+    }
+
+    if (user.role !== 'user' && user.role !== 'admin') {
+      return res.status(403).json({ message: 'Organizers only.' });
+    }
+
+    req.token = token;
+    req.user = user;
+    next();
+  } catch (error) {
+    res.status(401).json({ message: 'Organizer access required.' });
+  }
+};
+
+module.exports = { auth, adminAuth, judgeAuth, organizerAuth };

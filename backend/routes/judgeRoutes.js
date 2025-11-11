@@ -4,13 +4,24 @@ const {
   createJudgeRequest,
   getAllJudgeRequests,
   approveJudgeRequest,
-  rejectJudgeRequest
+  rejectJudgeRequest,
+  getAssignedHackathons,
+  getTeamsForJudging,
+  submitEvaluation,
+  getHackathonEvaluations
 } = require('../controllers/judgeController');
-const { auth, adminAuth } = require('../middleware/auth');
+const { auth, adminAuth, judgeAuth } = require('../middleware/auth');
 
-router.post('/request', auth, createJudgeRequest);
+// Judge request routes
+router.post('/request', judgeAuth, createJudgeRequest);
 router.get('/requests', adminAuth, getAllJudgeRequests);
 router.put('/request/:id/approve', adminAuth, approveJudgeRequest);
 router.put('/request/:id/reject', adminAuth, rejectJudgeRequest);
+
+// Judge evaluation routes
+router.get('/assigned-hackathons', judgeAuth, getAssignedHackathons);
+router.get('/hackathon/:hackathonId/teams', judgeAuth, getTeamsForJudging);
+router.post('/evaluate', judgeAuth, submitEvaluation);
+router.get('/hackathon/:hackathonId/evaluations', auth, getHackathonEvaluations);
 
 module.exports = router;
