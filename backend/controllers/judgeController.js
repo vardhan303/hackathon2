@@ -45,6 +45,18 @@ const getAllJudgeRequests = async (req, res) => {
   }
 };
 
+// Get judge's own requests with status
+const getMyJudgeRequests = async (req, res) => {
+  try {
+    const requests = await JudgeRequest.find({ userId: req.user._id })
+      .populate('hackathonId', 'name description startDate endDate status')
+      .sort({ createdAt: -1 });
+    res.json(requests);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // Approve judge request (admin only)
 const approveJudgeRequest = async (req, res) => {
   try {
@@ -215,6 +227,7 @@ const getHackathonEvaluations = async (req, res) => {
 module.exports = {
   createJudgeRequest,
   getAllJudgeRequests,
+  getMyJudgeRequests,
   approveJudgeRequest,
   rejectJudgeRequest,
   getAssignedHackathons,

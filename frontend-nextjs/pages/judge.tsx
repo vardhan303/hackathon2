@@ -14,6 +14,13 @@ interface Hackathon {
   status: string;
 }
 
+interface JudgeRequest {
+  _id: string;
+  hackathonId: Hackathon;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+}
+
 interface Team {
   _id: string;
   userId: {
@@ -45,6 +52,7 @@ export default function JudgeDashboard() {
   const [view, setView] = useState<'request' | 'assigned'>('assigned');
   const [availableHackathons, setAvailableHackathons] = useState<Hackathon[]>([]);
   const [assignedHackathons, setAssignedHackathons] = useState<Hackathon[]>([]);
+  const [myRequests, setMyRequests] = useState<JudgeRequest[]>([]);
   const [selectedHackathon, setSelectedHackathon] = useState<string | null>(null);
   const [teams, setTeams] = useState<Team[]>([]);
   const [evaluatingTeam, setEvaluatingTeam] = useState<Team | null>(null);
@@ -60,6 +68,7 @@ export default function JudgeDashboard() {
   useEffect(() => {
     fetchAssignedHackathons();
     fetchAvailableHackathons();
+    fetchMyRequests();
   }, []);
 
   const fetchAssignedHackathons = async () => {
@@ -80,6 +89,15 @@ export default function JudgeDashboard() {
     }
   };
 
+  const fetchMyRequests = async () => {
+    try {
+      const res = await api.get("/judge/my-requests");
+      setMyRequests(res.data);
+    } catch (err) {
+      console.error("Error fetching my requests:", err);
+    }
+  };
+
   const fetchTeams = async (hackathonId: string) => {
     setLoading(true);
     try {
@@ -96,8 +114,8 @@ export default function JudgeDashboard() {
   const requestToJudge = async (hackathonId: string) => {
     try {
       await api.post("/judge/request", { hackathonId });
-      alert("Judge request submitted successfully!");
-      fetchAvailableHackathons();
+      alert("Judge request submitted successfully! Wait for admin approval.");
+      fetchMyRequests();
     } catch (err: any) {
       alert(err.response?.data?.message || "Failed to submit judge request");
     }
@@ -457,51 +475,134 @@ export default function JudgeDashboard() {
 
           {/* Request to Judge View */}
           {view === 'request' && (
-            <div className="card p-6 animate-slide-up">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg">
-                  <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" />
-                  </svg>
+            <div className="space-y-6 animate-slide-up">
+              {/* My Judge Requests */}
+              <div className="card p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-3 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-lg">
+                    <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                      <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
+                    My Judge Requests ({myRequests.length})
+                  </h2>
                 </div>
-                <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-                  Request to Judge Hackathons
-                </h2>
-              </div>
 
-              {availableHackathons.length === 0 ? (
-                <div className="text-center py-16">
-                  <p className="text-gray-500 dark:text-gray-400">No hackathons available for judge requests.</p>
-                </div>
-              ) : (
-                <div className="grid gap-6">
-                  {availableHackathons.map((hackathon) => (
-                    <div
-                      key={hackathon._id}
-                      className="border-2 border-gray-200 dark:border-gray-700 p-6 rounded-xl hover:shadow-lg transition-all bg-white dark:bg-gray-800"
-                    >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <h3 className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                            {hackathon.name}
-                          </h3>
-                          <p className="text-gray-600 dark:text-gray-300 mt-2">{hackathon.description}</p>
-                          <div className="mt-3 space-y-1 text-sm text-gray-500 dark:text-gray-400">
-                            {hackathon.theme && <p>📌 Theme: {hackathon.theme}</p>}
-                            <p>📅 {formatDate(hackathon.startDate)} - {formatDate(hackathon.endDate)}</p>
+                {myRequests.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500 dark:text-gray-400">No requests submitted yet.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {myRequests.map((request) => (
+                      <div
+                        key={request._id}
+                        className="border-2 border-gray-200 dark:border-gray-700 p-5 rounded-xl bg-white dark:bg-gray-800 hover:shadow-md transition-all"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                                {request.hackathonId.name}
+                              </h3>
+                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                request.status === 'approved'
+                                  ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                                  : request.status === 'rejected'
+                                  ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                                  : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                              }`}>
+                                {request.status === 'approved' && '✅ ACCEPTED'}
+                                {request.status === 'rejected' && '❌ REJECTED'}
+                                {request.status === 'pending' && '⏳ PENDING'}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {request.hackathonId.description}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                              Requested on: {formatDate(request.createdAt)}
+                            </p>
                           </div>
                         </div>
-                        <button
-                          onClick={() => requestToJudge(hackathon._id)}
-                          className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-semibold"
-                        >
-                          Request to Judge
-                        </button>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Available Hackathons */}
+              <div className="card p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-3 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg">
+                    <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" />
+                    </svg>
+                  </div>
+                  <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
+                    Request to Judge Hackathons
+                  </h2>
                 </div>
-              )}
+
+                {availableHackathons.length === 0 ? (
+                  <div className="text-center py-16">
+                    <p className="text-gray-500 dark:text-gray-400">No hackathons available for judge requests.</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-6">
+                    {availableHackathons.map((hackathon) => {
+                      const hasRequested = myRequests.some(r => r.hackathonId._id === hackathon._id);
+                      const requestStatus = myRequests.find(r => r.hackathonId._id === hackathon._id)?.status;
+                      
+                      return (
+                        <div
+                          key={hackathon._id}
+                          className="border-2 border-gray-200 dark:border-gray-700 p-6 rounded-xl hover:shadow-lg transition-all bg-white dark:bg-gray-800"
+                        >
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                <h3 className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                                  {hackathon.name}
+                                </h3>
+                                {hasRequested && (
+                                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                    requestStatus === 'approved'
+                                      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                                      : requestStatus === 'rejected'
+                                      ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                                      : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                                  }`}>
+                                    {requestStatus?.toUpperCase()}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-gray-600 dark:text-gray-300 mt-2">{hackathon.description}</p>
+                              <div className="mt-3 space-y-1 text-sm text-gray-500 dark:text-gray-400">
+                                {hackathon.theme && <p>📌 Theme: {hackathon.theme}</p>}
+                                <p>📅 {formatDate(hackathon.startDate)} - {formatDate(hackathon.endDate)}</p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => requestToJudge(hackathon._id)}
+                              disabled={hasRequested}
+                              className={`px-6 py-3 rounded-lg font-semibold ${
+                                hasRequested
+                                  ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-500 cursor-not-allowed'
+                                  : 'bg-purple-600 hover:bg-purple-700 text-white'
+                              }`}
+                            >
+                              {hasRequested ? 'Already Requested' : 'Request to Judge'}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

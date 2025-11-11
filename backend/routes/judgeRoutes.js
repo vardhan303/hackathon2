@@ -3,6 +3,7 @@ const router = express.Router();
 const {
   createJudgeRequest,
   getAllJudgeRequests,
+  getMyJudgeRequests,
   approveJudgeRequest,
   rejectJudgeRequest,
   getAssignedHackathons,
@@ -14,6 +15,7 @@ const { auth, adminAuth, judgeAuth } = require('../middleware/auth');
 
 // Judge request routes
 router.post('/request', judgeAuth, createJudgeRequest);
+router.get('/my-requests', judgeAuth, getMyJudgeRequests);
 router.get('/requests', adminAuth, getAllJudgeRequests);
 router.put('/request/:id/approve', adminAuth, approveJudgeRequest);
 router.put('/request/:id/reject', adminAuth, rejectJudgeRequest);
