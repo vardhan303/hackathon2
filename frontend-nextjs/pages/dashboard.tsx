@@ -94,19 +94,25 @@ export default function Dashboard() {
   };
 
   const handleRegister = async (hackathonId: string) => {
+    console.log('Attempting registration:', { hackathonId, teamSize, teammates: teammates.slice(0, teamSize - 1) });
+    
     try {
       const response = await api.post("/hackathons/register", {
         hackathonId,
         teamSize,
         teammates: teammates.slice(0, teamSize - 1)
       });
-      alert(`Registration successful! Your registration number is: ${response.data.registrationNumber}`);
+      console.log('Registration response:', response.data);
+      alert(`✅ Registration successful! Your registration number is: ${response.data.registrationNumber}`);
       setRegisteringFor(null);
       setTeamSize(1);
       setTeammates([{ name: "", registrationNumber: "", email: "" }]);
       fetchMyRegistrations();
     } catch (err: any) {
-      alert(err.response?.data?.message || "Registration failed");
+      console.error('Registration error:', err);
+      console.error('Error response:', err.response?.data);
+      const errorMessage = err.response?.data?.message || "Registration failed";
+      alert(`❌ ${errorMessage}`);
     }
   };
 

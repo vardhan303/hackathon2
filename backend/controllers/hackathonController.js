@@ -130,22 +130,43 @@ const registerForHackathon = async (req, res) => {
     const { hackathonId, teamSize, teammates } = req.body;
     const userId = req.user._id;
 
+    console.log('Registration attempt:', { hackathonId, teamSize, teammates, userId });
+
+    // Validate required fields
+    if (!hackathonId) {
+      console.log('Missing hackathonId');
+      return res.status(400).json({ message: 'Hackathon ID is required' });
+    }
+
+    if (!teamSize || teamSize < 1) {
+      console.log('Invalid teamSize:', teamSize);
+      return res.status(400).json({ message: 'Valid team size is required' });
+    }
+
     // Check if hackathon exists
     const hackathon = await Hackathon.findById(hackathonId);
     if (!hackathon) {
+      console.log('Hackathon not found:', hackathonId);
       return res.status(404).json({ message: 'Hackathon not found' });
     }
 
     // Check if already registered
     const existingRegistration = await HackathonRegistration.findOne({ hackathonId, userId });
     if (existingRegistration) {
+      console.log('Already registered:', { hackathonId, userId });
       return res.status(400).json({ message: 'You are already registered for this hackathon' });
     }
 
     // Get user's registration number
     const user = await User.findById(userId);
+    if (!user) {
+      console.log('User not found:', userId);
+      return res.status(404).json({ message: 'User not found' });
+    }
+
     if (!user.registrationNumber) {
-      return res.status(400).json({ message: 'User registration number not found' });
+      console.log('User has no registration number:', userId);
+      return res.status(400).json({ message: 'User registration number not found. Please contact admin.' });
     }
 
     // Create registration
@@ -154,10 +175,11 @@ const registerForHackathon = async (req, res) => {
       userId,
       registrationNumber: user.registrationNumber,
       teamSize,
-      teammates
+      teammates: teammates || []
     });
 
     await registration.save();
+    console.log('Registration successful:', registration._id);
 
     res.status(201).json({
       message: 'Registration successful',
@@ -166,6 +188,7 @@ const registerForHackathon = async (req, res) => {
       registration
     });
   } catch (error) {
+    console.error('Registration error:', error);
     res.status(500).json({ message: error.message });
   }
 };
