@@ -51,12 +51,16 @@ export default function AdminManagement() {
     try {
       const [usersRes, hackathonsRes] = await Promise.all([
         api.get("/auth/users"),
-        api.get("/hackathons/admin/all")
+        api.get("/hackathons")
       ]);
+      console.log('Users:', usersRes.data);
+      console.log('Hackathons:', hackathonsRes.data);
       setUsers(usersRes.data);
       setHackathons(hackathonsRes.data);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error fetching data:", err);
+      console.error("Error response:", err.response?.data);
+      alert(`Failed to fetch data: ${err.response?.data?.message || err.message}`);
     } finally {
       setLoading(false);
     }

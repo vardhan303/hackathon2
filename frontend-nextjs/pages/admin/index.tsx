@@ -42,10 +42,14 @@ export default function AdminPanel() {
         api.get("/request/hackathon"),
         api.get("/judge/requests")
       ]);
+      console.log('Hackathon Requests:', res1.data);
+      console.log('Judge Requests:', res2.data);
       setHackathonRequests(res1.data);
       setJudgeRequests(res2.data);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error fetching requests:", err);
+      console.error("Error response:", err.response?.data);
+      alert(`Failed to fetch requests: ${err.response?.data?.message || err.message}`);
     } finally {
       setLoading(false);
     }
