@@ -66,7 +66,7 @@ export default function MyHackathons() {
 
   const fetchMyHackathons = async () => {
     try {
-      const res = await api.get("/hackathons");
+      const res = await api.get("/hackathons/details");
       // Filter hackathons created by this organizer
       const myHackathons = res.data.filter(
         (h: any) => h.organizerEmail === user?.email
@@ -74,19 +74,44 @@ export default function MyHackathons() {
       setHackathons(myHackathons);
     } catch (err) {
       console.error("Error fetching hackathons:", err);
+      // Fallback to regular endpoint if details endpoint fails
+      try {
+        const res = await api.get("/hackathons");
+        const myHackathons = res.data.filter(
+          (h: any) => h.organizerEmail === user?.email
+        );
+        setHackathons(myHackathons);
+      } catch (fallbackErr) {
+        console.error("Fallback error:", fallbackErr);
+      }
     }
   };
 
   const fetchRegistrations = async (hackathonId: string) => {
     setLoading(true);
+    console.log('Fetching registrations for hackathon:', hackathonId);
     try {
       const res = await api.get(`/hackathons/${hackathonId}/registrations`);
-      setRegistrations(res.data.registrations || res.data);
-      setRegistrationStats(res.data.stats || null);
+      console.log('Registration response:', res.data);
+      
+      // Handle both response formats
+      if (res.data.registrations) {
+        setRegistrations(res.data.registrations);
+        setRegistrationStats(res.data.stats);
+      } else if (Array.isArray(res.data)) {
+        setRegistrations(res.data);
+        setRegistrationStats(null);
+      } else {
+        console.error('Unexpected response format:', res.data);
+        setRegistrations([]);
+        setRegistrationStats(null);
+      }
+      
       setSelectedHackathon(hackathonId);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error fetching registrations:", err);
-      alert("Failed to fetch registrations");
+      console.error("Error response:", err.response?.data);
+      alert(`Failed to fetch registrations: ${err.response?.data?.message || err.message}`);
     } finally {
       setLoading(false);
     }
