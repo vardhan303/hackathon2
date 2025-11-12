@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix Database Index</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        #result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .loading {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .info {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            color: #004085;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Fix Database Index</h1>
+        <p class="subtitle">This will remove the duplicate key error on hackathon registrations</p>
+        
+        <div class="info">
+            <strong>What this does:</strong>
+            <ul>
+                <li>Drops the old unique index on <code>registrationNumber</code></li>
+                <li>Creates a compound unique index on <code>(hackathonId, userId)</code></li>
+                <li>Allows users to register for multiple hackathons</li>
+            </ul>
+        </div>
+
+        <button id="fixButton" onclick="fixDatabase()">
+            Run Database Fix
+        </button>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        async function fixDatabase() {
+            const button = document.getElementById('fixButton');
+            const resultDiv = document.getElementById('result');
+            
+            // Disable button and show loading
+            button.disabled = true;
+            button.innerHTML = '<span class="spinner"></span> Fixing database...';
+            resultDiv.className = 'loading';
+            resultDiv.textContent = 'Connecting to server and fixing indexes...';
+
+            try {
+                // Try the endpoint without /api prefix first
+                let response = await fetch('https://hackathon2-backend-sage.vercel.app/auth/fix-registration-indexes', {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                // If that fails, try with /api prefix
+                if (!response.ok && response.status === 404) {
+                    response = await fetch('https://hackathon2-backend-sage.vercel.app/api/auth/fix-registration-indexes', {
+                        method: 'POST',
+                        mode: 'cors',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                }
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.className = 'success';
+                    resultDiv.textContent = '✅ SUCCESS!\n\n' + 
+                        'Message: ' + data.message + '\n\n' +
+                        'Old Indexes:\n' + JSON.stringify(data.oldIndexes, null, 2) + '\n\n' +
+                        'New Indexes:\n' + JSON.stringify(data.newIndexes, null, 2) + '\n\n' +
+                        '🎉 You can now register for hackathons without duplicate key errors!';
+                    button.innerHTML = '✓ Fix Applied Successfully';
+                } else {
+                    throw new Error(data.message || 'Server returned error: ' + response.status);
+                }
+            } catch (error) {
+                resultDiv.className = 'error';
+                let errorMessage = '❌ ERROR\n\n' + error.message + '\n\n';
+                
+                if (error.message.includes('Failed to fetch')) {
+                    errorMessage += 'CORS or Network Error. This could mean:\n' +
+                        '1. Backend not deployed or not responding\n' +
+                        '2. CORS blocking the request\n' +
+                        '3. Network/firewall issue\n\n' +
+                        'Try opening this URL directly in a new tab:\n' +
+                        'https://hackathon2-backend-sage.vercel.app/\n\n' +
+                        'If that works, the backend is running but CORS needs adjustment.';
+                } else {
+                    errorMessage += 'Please check:\n' +
+                        '1. Your internet connection\n' +
+                        '2. Backend is deployed on Vercel\n' +
+                        '3. Try again in a few moments';
+                }
+                
+                resultDiv.textContent = errorMessage;
+                button.disabled = false;
+                button.innerHTML = 'Retry Fix';
+            }
+        }
+    </script>
+</body>
+</html>

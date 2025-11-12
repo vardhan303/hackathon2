@@ -227,6 +227,25 @@ const registerForHackathon = async (req, res) => {
     });
   } catch (error) {
     console.error('Registration error:', error);
+    
+    // Handle duplicate key error specifically
+    if (error.code === 11000) {
+      // Check if it's the old registrationNumber index causing issues
+      if (error.message.includes('registrationNumber_1')) {
+        return res.status(500).json({ 
+          message: 'Database index error. Please contact administrator to run: POST /auth/fix-registration-indexes',
+          error: 'Duplicate registration number index needs to be removed',
+          technicalDetails: error.message
+        });
+      }
+      // If it's the compound index (hackathonId + userId), user is already registered
+      if (error.message.includes('hackathonId_1_userId_1')) {
+        return res.status(400).json({ 
+          message: 'You are already registered for this hackathon' 
+        });
+      }
+    }
+    
     res.status(500).json({ message: error.message });
   }
 };
