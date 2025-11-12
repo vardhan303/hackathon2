@@ -199,12 +199,21 @@ const registerForHackathon = async (req, res) => {
     }
 
     // Create registration
+    // Filter out incomplete teammates (must have all 3 fields)
+    const validTeammates = (teammates || []).filter(tm => 
+      tm.name && tm.name.trim() !== '' && 
+      tm.registrationNumber && tm.registrationNumber.trim() !== '' && 
+      tm.email && tm.email.trim() !== ''
+    );
+
+    console.log('Valid teammates count:', validTeammates.length);
+
     const registration = new HackathonRegistration({
       hackathonId,
       userId,
       registrationNumber: user.registrationNumber,
       teamSize,
-      teammates: teammates || []
+      teammates: validTeammates
     });
 
     await registration.save();

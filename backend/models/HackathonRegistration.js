@@ -23,15 +23,21 @@ const hackathonRegistrationSchema = new mongoose.Schema({
   teammates: [{
     name: {
       type: String,
-      required: true
+      required: function() {
+        return this.parent().teamSize > 1;
+      }
     },
     registrationNumber: {
       type: String,
-      required: true
+      required: function() {
+        return this.parent().teamSize > 1;
+      }
     },
     email: {
       type: String,
-      required: true
+      required: function() {
+        return this.parent().teamSize > 1;
+      }
     }
   }],
   status: {
