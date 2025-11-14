@@ -208,16 +208,80 @@ const registerForHackathon = async (req, res) => {
 
     console.log('Valid teammates count:', validTeammates.length);
 
-    const registration = new HackathonRegistration({
-      hackathonId,
-      userId,
-      registrationNumber: user.registrationNumber,
-      teamSize,
-      teammates: validTeammates
-    });
+    // Try to save the registration
+    let registration;
+    let saveAttempts = 0;
+    let maxAttempts = 5;
+    let saved = false;
 
-    await registration.save();
-    console.log('Registration successful:', registration._id);
+    while (!saved && saveAttempts < maxAttempts) {
+      try {
+        registration = new HackathonRegistration({
+          hackathonId,
+          userId,
+          registrationNumber: user.registrationNumber,
+          teamSize,
+          teammates: validTeammates
+        });
+
+        await registration.save();
+        saved = true;
+        console.log('Registration successful:', registration._id);
+      } catch (saveError) {
+        // If it's duplicate key error on registrationNumber (old index issue)
+        if (saveError.code === 11000 && saveError.message.includes('registrationNumber_1')) {
+          console.log(`Duplicate registrationNumber detected, generating new one (attempt ${saveAttempts + 1})`);
+          
+          // Generate a new unique registration number for this user
+          let isUnique = false;
+          let attempts = 0;
+          const maxRegAttempts = 10;
+          let newRegNumber = '';
+          
+          while (!isUnique && attempts < maxRegAttempts) {
+            const timestamp = Date.now().toString();
+            const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+            newRegNumber = `USR${timestamp}${random}`;
+            
+            const existingUser = await User.findOne({ registrationNumber: newRegNumber });
+            const existingReg = await HackathonRegistration.findOne({ registrationNumber: newRegNumber });
+            
+            if (!existingUser && !existingReg) {
+              isUnique = true;
+            } else {
+              attempts++;
+              await new Promise(resolve => setTimeout(resolve, 10));
+            }
+          }
+          
+          if (isUnique) {
+            // Update user's registration number
+            user.registrationNumber = newRegNumber;
+            await user.save();
+            console.log('Updated user registration number to:', newRegNumber);
+            saveAttempts++;
+          } else {
+            throw new Error('Failed to generate unique registration number after retries');
+          }
+        } else if (saveError.code === 11000 && saveError.message.includes('hackathonId_1_userId_1')) {
+          // User already registered for this hackathon (compound index - correct behavior)
+          return res.status(400).json({ 
+            message: 'You are already registered for this hackathon' 
+          });
+        } else {
+          // Other errors, throw them
+          throw saveError;
+        }
+      }
+    }
+
+    if (!saved) {
+      console.log('Failed to save registration after maximum attempts');
+      return res.status(500).json({ 
+        message: 'Failed to complete registration. Please try again or contact support.',
+        error: 'Maximum retry attempts exceeded'
+      });
+    }
 
     res.status(201).json({
       message: 'Registration successful',
@@ -227,25 +291,6 @@ const registerForHackathon = async (req, res) => {
     });
   } catch (error) {
     console.error('Registration error:', error);
-    
-    // Handle duplicate key error specifically
-    if (error.code === 11000) {
-      // Check if it's the old registrationNumber index causing issues
-      if (error.message.includes('registrationNumber_1')) {
-        return res.status(500).json({ 
-          message: 'Database index error. Please contact administrator to run: POST /auth/fix-registration-indexes',
-          error: 'Duplicate registration number index needs to be removed',
-          technicalDetails: error.message
-        });
-      }
-      // If it's the compound index (hackathonId + userId), user is already registered
-      if (error.message.includes('hackathonId_1_userId_1')) {
-        return res.status(400).json({ 
-          message: 'You are already registered for this hackathon' 
-        });
-      }
-    }
-    
     res.status(500).json({ message: error.message });
   }
 };
